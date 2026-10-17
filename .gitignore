@@ -1,0 +1,61 @@
+# Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Build and packaging artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test, lint and type-check caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Local secrets (keep example configuration files)
+.env
+.env.*
+!.env.example
+!.env.sample
+.aws/
+
+# Generated datasets, models and experiment output
+/data/
+/artifacts/
+/checkpoints/
+/runs/
+/mlruns/
+*.pt
+*.pth
+*.ckpt
+*.joblib
+*.pkl
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Local editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+#текст задания
+task.md

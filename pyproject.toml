@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "joblib>=1.6.0",
+    "kagglehub>=1.0.2",
     "matplotlib>=3.11.2",
     "numpy>=2.5.4",
     "pandas>=3.0.6",
@@ -16,7 +17,9 @@ dependencies = [
     "scikit-learn>=1.9.1",
     "scipy>=1.18.1",
     "seaborn>=0.13.2",
+    "surprise>=0.1",
     "torch>=2.14.1",
+    "wordcloud>=1.9.6",
 ]
 
 [project.scripts]

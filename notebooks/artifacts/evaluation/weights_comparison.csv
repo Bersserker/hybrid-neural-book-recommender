@@ -1,0 +1,13 @@
+Segment,Model,Initial,Optimized
+new,pop,0.65,0.20415604092367098
+new,content,0.25,0.033852559235602694
+new,item,0.05,0.5335531962338274
+new,svd,0.05,0.22843820360689895
+regular,pop,0.15,0.009620455168903653
+regular,content,0.35,0.48286483283492937
+regular,item,0.25,0.26381636655265367
+regular,svd,0.25,0.24369834544351335
+active,pop,0.05,0.05
+active,content,0.15,0.15
+active,item,0.35,0.35
+active,svd,0.45,0.45

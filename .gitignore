@@ -35,6 +35,7 @@ coverage.xml
 # Generated datasets, models and experiment output
 /data/
 /artifacts/
+/reports/
 /checkpoints/
 /runs/
 /mlruns/

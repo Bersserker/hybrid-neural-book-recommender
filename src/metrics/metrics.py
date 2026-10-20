@@ -1,14 +1,49 @@
 import numpy as np
 
-def ranking_metrics(recommended, relevant, k=5):
-    """Precision@K — число попаданий / K; Recall@K — число попаданий / число релевантных
-        тестовых книг пользователя. nDCG@K учитывает позиции попаданий с весами
-        `1 / log2(позиция + 1)` и делится на идеальный DCG.
-        Общая функция ниже только считает метрики одного списка; рекомендации каждой
-        модели получаем отдельно. В таблице усредняем метрики по пользователям."""
-    hits = np.array([book_id in relevant for book_id in recommended[:k]], dtype=float)
-    precision = hits.sum() / k
-    recall = hits.sum() / len(relevant) if relevant else 0.0
-    dcg = (hits / np.log2(np.arange(len(hits)) + 2)).sum()
-    idcg = (1 / np.log2(np.arange(min(k, len(relevant))) + 2)).sum()
-    return precision, recall, dcg / idcg if idcg > 0 else 0.0
+
+def precision_at_k(actual, predicted, k=10):
+    if k <= 0:
+        return 0.0
+
+    actual = set(actual)
+    predicted = list(dict.fromkeys(predicted))[:k]
+
+    hits = len(actual.intersection(predicted))
+
+    return hits / k
+
+
+def recall_at_k(actual, predicted, k=10):
+    actual = set(actual)
+
+    if not actual or k <= 0:
+        return 0.0
+
+    predicted = list(dict.fromkeys(predicted))[:k]
+
+    hits = len(actual.intersection(predicted))
+
+    return hits / len(actual)
+
+
+def ndcg_at_k(actual, predicted, k=10):
+    actual = set(actual)
+
+    if not actual or k <= 0:
+        return 0.0
+
+    predicted = list(dict.fromkeys(predicted))[:k]
+
+    relevance = np.array([1 if book_id in actual else 0 for book_id in predicted])
+
+    positions = np.arange(1, len(relevance) + 1)
+
+    dcg = np.sum(relevance / np.log2(positions + 1))
+
+    ideal_hits = min(len(actual), k)
+
+    ideal_positions = np.arange(1, ideal_hits + 1)
+
+    idcg = np.sum(1 / np.log2(ideal_positions + 1))
+
+    return float(dcg / idcg)

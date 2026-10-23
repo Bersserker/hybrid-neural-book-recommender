@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from notebook_reference import load_pipeline
 from test_models import data as model_data_fixture
 
 from src.data.features import ExtendedFeatureBuilder, build_feature_tables
@@ -32,7 +33,6 @@ from src.models.hybrid_recommender import HybridRecommender
 from src.models.recommend_popular_recomemder import recommend_popular_recomemder
 from src.models.svd_recommender import svd_recommender
 from src.models.two_tower import TwoTower, TwoTowerRecommender, build_two_tower
-from src.pipeline import load_pipeline
 from src.workflow import evaluate_pipeline_models, run_pipeline
 
 

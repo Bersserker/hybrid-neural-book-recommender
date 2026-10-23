@@ -68,8 +68,7 @@ train-report: train
 	$(MAKE) report
 
 
-# Сквозной пайплайн из prototype.ipynb: данные → обучение → выдача → отчёт.
-NOTEBOOK ?=
+# Сквозной пайплайн из модулей src: данные → обучение → выдача → отчёт.
 PIPELINE_OUTPUT_DIR ?= artifacts/notebook_pipeline
 MAX_USERS ?= none
 TUNING_USERS ?= 200
@@ -86,7 +85,7 @@ RECOMMEND_USERS ?=
 .PHONY: pipeline pipeline-smoke pipeline-classical
 
 pipeline:
-	$(PYTHON) -m src.pipeline $(if $(NOTEBOOK),--notebook "$(NOTEBOOK)") \
+	$(PYTHON) -m src.pipeline \
 		--data-dir "$(RAW_DATA_DIR)" --output-dir "$(PIPELINE_OUTPUT_DIR)" \
 		--max-users "$(MAX_USERS)" --tuning-users "$(TUNING_USERS)" --eval-users "$(EVAL_USERS)" \
 		--epochs "$(EPOCHS)" --batch-size "$(BATCH_SIZE)" --svd-epochs "$(SVD_EPOCHS)" \

@@ -1,6 +1,7 @@
-"""Автономный пайплайн и опциональная загрузка прототипа."""
+"""Автономный пайплайн из src, работающий без ноутбуков."""
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -8,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.pipeline import load_pipeline, user_limit
+from src.pipeline import user_limit
 
 
 @pytest.mark.parametrize(
@@ -18,42 +19,16 @@ def test_user_limits(value, expected):
     assert user_limit(value) == expected
 
 
-def test_loader_skips_examples_and_training_calls(tmp_path):
-    marker = tmp_path / "example-ran"
-    notebook = tmp_path / "prototype.ipynb"
-    notebook.write_text(
-        json.dumps(
-            {
-                "cells": [
-                    {
-                        "cell_type": "code",
-                        "source": [
-                            "from pathlib import Path\n",
-                            "FACTOR = 2\n",
-                            "def run_pipeline(value=3):\n    return value * FACTOR\n",
-                            f"result = Path({str(marker)!r}).write_text('example')\n",
-                            "for i in range(1):\n    raise RuntimeError('example loop')\n",
-                        ],
-                    }
-                ]
-            }
-        )
+@pytest.mark.parametrize("use_neural", [False, True])
+def test_make_pipeline_end_to_end(tmp_path, use_neural):
+    # В отдельной копии проекта есть только src и Makefile, без ноутбуков.
+    root = Path(__file__).resolve().parents[1]
+    project = tmp_path / "standalone project"
+    project.mkdir()
+    shutil.copytree(
+        root / "src", project / "src", ignore=shutil.ignore_patterns("__pycache__")
     )
-    pipeline = load_pipeline(notebook)
-    assert not marker.exists()
-    assert pipeline() == 6
-    assert pipeline(value=5) == 10
-
-
-def test_missing_pipeline_is_reported(tmp_path):
-    notebook = tmp_path / "empty.ipynb"
-    notebook.write_text(json.dumps({"cells": []}))
-    with pytest.raises(TypeError, match="run_pipeline"):
-        load_pipeline(notebook)
-
-
-@pytest.mark.parametrize("notebook", [False, True])
-def test_make_pipeline_end_to_end(tmp_path, notebook):
+    shutil.copy2(root / "Makefile", project / "Makefile")
     raw = tmp_path / "raw files"
     output = tmp_path / "pipeline output"
     raw.mkdir()
@@ -101,9 +76,9 @@ def test_make_pipeline_end_to_end(tmp_path, notebook):
             "THREADS=1",
             "DEVICE=cpu",
             "RECOMMEND_USERS=501,9999",
-            "NOTEBOOK=notebooks/prototype.ipynb" if notebook else "NOTEBOOK=",
+            f"USE_NEURAL={int(use_neural)}",
         ],
-        cwd=Path(__file__).resolve().parents[1],
+        cwd=project,
         capture_output=True,
         text=True,
         check=False,
@@ -113,11 +88,10 @@ def test_make_pipeline_end_to_end(tmp_path, notebook):
     config = json.loads((reports / "config.json").read_text())
     assert config["k"] == 3
     assert config["evaluated_test_users"] == 8
-    assert "two_tower" in config["model_names"]
+    assert ("two_tower" in config["model_names"]) == use_neural
     metrics = pd.read_csv(reports / "metrics.csv")
-    assert {"Hybrid + Two Tower", "Hybrid (classical)", "Adaptive Hybrid + MMR"} <= set(
-        metrics.Model
-    )
+    assert {"Hybrid (classical)", "Adaptive Hybrid + MMR"} <= set(metrics.Model)
+    assert ("Hybrid + Two Tower" in set(metrics.Model)) == use_neural
     recs = pd.read_csv(reports / "recommendations.csv")
     assert set(recs.user_id) == {501, 9999}
     assert set(recs.book_id) <= set(range(101, 113))
@@ -125,31 +99,14 @@ def test_make_pipeline_end_to_end(tmp_path, notebook):
     assert (reports / "segments.png").is_file()
     assert (output / "processed" / "train.csv").is_file()
     assert result.stdout.count("1/6 Загрузка") == 1
-    if not notebook:
-        # Сравниваем весь автономный процесс с текущим прототипом на тех же CSV.
-        from src.workflow import run_pipeline
 
-        reference = load_pipeline(
-            Path(__file__).resolve().parents[1] / "notebooks/prototype.ipynb"
-        )
-        kwargs = {
-            "data_dir": raw,
-            "epochs": 1,
-            "svd_epochs": 1,
-            "n_trials": 1,
-            "batch_size": 32,
-            "k": 3,
-            "candidates_k": 10,
-            "tuning_users": None,
-            "eval_users": None,
-            "device": "cpu",
-            "recommend_user_ids": [501, 9999],
-        }
-        expected = reference(output_dir=tmp_path / "reference", **kwargs)
-        actual = run_pipeline(output_dir=tmp_path / "standalone", **kwargs)
-        for key in ["metrics", "segments", "recommendations"]:
-            pd.testing.assert_frame_equal(actual[key], expected[key])
-        assert (
-            actual["adaptive"].adaptive_weights == expected["adaptive"].adaptive_weights
-        )
-        assert actual["model"].relevance_weight == expected["model"].relevance_weight
+
+def test_cli_uses_src_only():
+    result = subprocess.run(
+        [sys.executable, "-m", "src.pipeline", "--help"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "--notebook" not in result.stdout
+    assert "--no-neural" in result.stdout

@@ -1,4 +1,4 @@
-"""Автономный сквозной пайплайн из prototype.ipynb."""
+"""Сквозной пайплайн на основе модулей src.data, src.models и src.metrics."""
 
 import json
 from pathlib import Path
